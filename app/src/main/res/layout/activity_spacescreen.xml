@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F6F8">
+
+    <ImageView
+        android:id="@+id/ivWorkspaceLogo"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvWorkspaceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:text="C4S Workspace"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
+        app:layout_constraintStart_toEndOf="@id/ivWorkspaceLogo"
+        app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo" />
+
+    <ImageView
+        android:id="@+id/ivDropdownArrow"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/arrow_dropdown"
+        app:layout_constraintBottom_toBottomOf="@id/tvWorkspaceName"
+        app:layout_constraintStart_toEndOf="@id/tvWorkspaceName"
+        app:layout_constraintTop_toTopOf="@id/tvWorkspaceName"
+        app:tint="@color/black" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivUserProfile"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/profile_icon"
+        app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo"
+        app:shapeAppearanceOverlay="@style/CircleImage" />
+
+    <LinearLayout
+        android:id="@+id/llSearchContainer"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_search_bar"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivWorkspaceLogo">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/search_icon"
+            app:tint="@color/text_gray_secondary" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:background="@android:color/transparent"
+            android:hint="Search"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:textColorHint="@color/text_gray_secondary"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_rounded_top_white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/llSearchContainer">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="12dp">
+            <LinearLayout
+                android:id="@+id/llSpacesList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
