@@ -4,17 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F6F8">
-
+    android:background="@color/white">
     <ImageView
-        android:id="@+id/ivWorkspaceLogo"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:src="@drawable/logo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    android:id="@+id/ivWorkspaceLogo"
+    android:layout_width="32dp"
+    android:layout_height="32dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="16dp"
+    android:scaleType="centerInside"
+    android:src="@drawable/logo"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvWorkspaceName"
@@ -34,7 +34,7 @@
         android:layout_width="14dp"
         android:layout_height="14dp"
         android:layout_marginStart="4dp"
-        android:src="@drawable/arrow_dropdown"
+        android:src="@drawable/arrow_down"
         app:layout_constraintBottom_toBottomOf="@id/tvWorkspaceName"
         app:layout_constraintStart_toEndOf="@id/tvWorkspaceName"
         app:layout_constraintTop_toTopOf="@id/tvWorkspaceName"
@@ -45,11 +45,36 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="16dp"
+        android:scaleType="centerCrop"
         android:src="@drawable/profile_icon"
         app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo"
         app:shapeAppearanceOverlay="@style/CircleImage" />
+
+    <View
+        android:id="@+id/viewOnlineStatus"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:background="@drawable/bg_online_dot"
+        android:translationX="2dp"
+        android:translationY="2dp"
+        app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
+        app:layout_constraintEnd_toEndOf="@id/ivUserProfile" />
+
+    <ImageButton
+        android:id="@+id/btnInvite"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/invite_icon"
+        app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
+        app:layout_constraintEnd_toStartOf="@id/ivUserProfile"
+        app:layout_constraintTop_toTopOf="@id/ivUserProfile"
+        app:tint="@color/black" />
 
     <LinearLayout
         android:id="@+id/llSearchContainer"
@@ -75,32 +100,204 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginStart="12dp"
-            android:background="@android:color/transparent"
+            android:background="@color/transparent"
             android:hint="Search"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:textColorHint="@color/text_gray_secondary"
             android:textSize="16sp" />
     </LinearLayout>
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="20dp"
         android:background="@drawable/bg_rounded_top_white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/llSearchContainer">
+        app:layout_constraintTop_toBottomOf="@id/llSearchContainer"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingTop="12dp">
+
             <LinearLayout
                 android:id="@+id/llSpacesList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="All Spaces"
+                    android:textColor="@color/text_gray_secondary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <include layout="@layout/item_space_card" />
+
+                <include layout="@layout/item_space_card" />
+
+                <include layout="@layout/item_space_card" />
+
+            </LinearLayout>
         </ScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <LinearLayout
+        android:id="@+id/llBottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical|bottom"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="24dp"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="12dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="8dp">
+
+                <LinearLayout
+                    android:id="@+id/nav_home_icon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/home_icon"
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Home"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/inbox_icon"
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Inbox"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/list"
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Tasks"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/nav_space_icon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/bg_selected_tab"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/space_fill_icon"
+                            app:tint="@color/primary_blue" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Spaces"
+                            android:textColor="@color/primary_blue"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/createSpaces"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="26dp"
+            app:cardElevation="12dp"
+            app:strokeWidth="0dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/plus_icon"
+                app:tint="@color/text_gray_primary" />
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

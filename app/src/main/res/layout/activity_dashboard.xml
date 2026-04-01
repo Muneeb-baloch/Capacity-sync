@@ -1,82 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout<ImageView
-android:id="@+id/ivWorkspaceLogo"
-android:layout_width="32dp"
-android:layout_height="32dp"
-android:layout_marginStart="16dp"
-android:layout_marginTop="16dp"
-android:scaleType="centerInside"
-android:src="@drawable/logo"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintTop_toTopOf="parent" />
-
-<TextView
-android:id="@+id/tvWorkspaceName"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:layout_marginStart="12dp"
-android:text="C4S Workspace"
-android:textColor="@color/black"
-android:textSize="18sp"
-android:textStyle="bold"
-app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
-app:layout_constraintStart_toEndOf="@id/ivWorkspaceLogo"
-app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo" />
-
-<ImageView
-android:id="@+id/ivDropdownArrow"
-android:layout_width="14dp"
-android:layout_height="14dp"
-android:layout_marginStart="4dp"
-android:src="@drawable/arrow_dropdown"
-app:layout_constraintBottom_toBottomOf="@id/tvWorkspaceName"
-app:layout_constraintStart_toEndOf="@id/tvWorkspaceName"
-app:layout_constraintTop_toTopOf="@id/tvWorkspaceName"
-app:tint="@color/black" />
-
-<com.google.android.material.imageview.ShapeableImageView
-android:id="@+id/ivUserProfile"
-android:layout_width="40dp"
-android:layout_height="40dp"
-android:layout_marginEnd="16dp"
-android:scaleType="centerCrop"
-android:src="@drawable/profile_icon"
-app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
-app:layout_constraintEnd_toEndOf="parent"
-app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo"
-app:shapeAppearanceOverlay="@style/CircleImage" />
-
-<View
-android:id="@+id/viewOnlineStatus"
-android:layout_width="12dp"
-android:layout_height="12dp"
-android:background="@drawable/bg_online_dot"
-android:translationX="2dp"
-android:translationY="2dp"
-app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
-app:layout_constraintEnd_toEndOf="@id/ivUserProfile" />
-
-<ImageButton
-android:id="@+id/btnInvite"
-android:layout_width="40dp"
-android:layout_height="40dp"
-android:layout_marginEnd="8dp"
-android:padding="8dp"
-android:scaleType="fitCenter"
-android:background="?attr/selectableItemBackgroundBorderless"
-android:src="@drawable/invite_icon"
-app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
-app:layout_constraintEnd_toStartOf="@id/ivUserProfile"
-app:layout_constraintTop_toTopOf="@id/ivUserProfile"
-app:tint="@color/black" />
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/off_white_bg">
 
+    <ImageView
+        android:id="@+id/ivWorkspaceLogo"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/tvWorkspaceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:text="C4S Workspace"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
+        app:layout_constraintStart_toEndOf="@id/ivWorkspaceLogo"
+        app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo" />
+
+    <ImageView
+        android:id="@+id/ivDropdownArrow"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/arrow_down"
+        app:layout_constraintBottom_toBottomOf="@id/tvWorkspaceName"
+        app:layout_constraintStart_toEndOf="@id/tvWorkspaceName"
+        app:layout_constraintTop_toTopOf="@id/tvWorkspaceName"
+        app:tint="@color/black" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivUserProfile"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="16dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/profile_icon"
+        app:layout_constraintBottom_toBottomOf="@id/ivWorkspaceLogo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivWorkspaceLogo"
+        app:shapeAppearanceOverlay="@style/CircleImage" />
+
+    <View
+        android:id="@+id/viewOnlineStatus"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:background="@drawable/bg_online_dot"
+        android:translationX="2dp"
+        android:translationY="2dp"
+        app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
+        app:layout_constraintEnd_toEndOf="@id/ivUserProfile" />
+
+    <ImageButton
+        android:id="@+id/btnInvite"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/invite_icon"
+        app:layout_constraintBottom_toBottomOf="@id/ivUserProfile"
+        app:layout_constraintEnd_toStartOf="@id/ivUserProfile"
+        app:layout_constraintTop_toTopOf="@id/ivUserProfile"
+        app:tint="@color/black" />
 
     <LinearLayout
         android:id="@+id/llSearchContainer"
@@ -146,7 +146,7 @@ app:tint="@color/black" />
                     android:id="@+id/ivChevronRecents"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/arrow_dropdown"
+                    android:src="@drawable/arrow_down"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -173,7 +173,7 @@ app:tint="@color/black" />
                     android:id="@+id/ivChevronFavorites"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/arrow_dropdown"
+                    android:src="@drawable/arrow_down"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -215,7 +215,7 @@ app:tint="@color/black" />
                     android:id="@+id/ivChevronSpaces"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/arrow_dropdown"
+                    android:src="@drawable/arrow_down"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -230,7 +230,7 @@ app:tint="@color/black" />
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="center_vertical|bottom"
         android:paddingHorizontal="16dp"
         android:paddingBottom="24dp"
         android:clipToPadding="false"
@@ -240,83 +240,128 @@ app:tint="@color/black" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="0dp"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="12dp"
-            app:cardBackgroundColor="#F5F5F7"
+            app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="32dp"
-            app:cardElevation="6dp"
+            app:cardElevation="12dp"
             app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center">
+                android:gravity="center"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="8dp">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
-                    <View
-                        android:layout_width="45dp"
-                        android:layout_height="45dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/bg_selected_tab" />
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/home_fill_icon"
-                        app:tint="#6200EE" /> </FrameLayout>
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center">
 
-                <FrameLayout
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/bg_selected_tab"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/home_fill_icon"
+                            app:tint="@color/primary_blue" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Home"
+                            android:textColor="@color/primary_blue"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/inbox_icon"
-                        app:tint="@color/text_gray_primary" />
-                </FrameLayout>
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Inbox"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/list"
-                        app:tint="@color/text_gray_primary" />
-                </FrameLayout>
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Tasks"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
 
-                <FrameLayout
+                <LinearLayout
                     android:id="@+id/nav_space_icon"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/space_icon"
-                        app:tint="@color/text_gray_primary" />
-                </FrameLayout>
+                        app:tint="@color/text_gray_secondary" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Spaces"
+                        android:textColor="@color/text_gray_secondary"
+                        android:textSize="10sp" />
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/createSpaces"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            app:cardBackgroundColor="#F5F5F7"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="6dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="26dp"
+            app:cardElevation="12dp"
             app:strokeWidth="0dp">
 
             <ImageView

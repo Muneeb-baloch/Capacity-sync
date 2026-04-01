@@ -2,19 +2,23 @@ package com.example.capacitysync
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
 import com.example.capacitysync.databinding.ActivityDashboardBinding
 import com.example.capacitysync.databinding.NewspacesmaplecardBinding
+import com.example.capacitysync.databinding.InviteMembersCardBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import androidx.core.widget.doAfterTextChanged
-import androidx.core.content.ContextCompat
 
 class Dashboard : AppCompatActivity() {
 
@@ -26,6 +30,9 @@ class Dashboard : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Catch any system animations trying to play when the screen is pulled forward
+        overridePendingTransition(0, 0)
 
         binding = ActivityDashboardBinding.inflate(layoutInflater)
 
@@ -41,30 +48,46 @@ class Dashboard : AppCompatActivity() {
 
         loadSavedSpaces()
 
+        // --- BUTTON CLICK LISTENERS ---
+
+        // 1. Create Space Buttons
         binding.createNewSpace.setOnClickListener { showCreateSpacePopup() }
         binding.createSpaces.setOnClickListener { showCreateSpacePopup() }
+
+        // 2. Invite Button (Make sure you have a button with this ID in your Dashboard XML!)
+        // If your invite button has a different ID, change "btnInvite" to match it.
+        binding.btnInvite.setOnClickListener {
+            showInviteMembersPopup()
+        }
+
+        // 3. Bottom Nav: Go to Spaces
         binding.navSpaceIcon.setOnClickListener {
             val intent = Intent(this, newspaces::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NO_ANIMATION
             startActivity(intent)
+            overridePendingTransition(0, 0)
         }
     }
 
+    // Force Android to skip animations when leaving this screen
+    override fun onPause() {
+        super.onPause()
+        overridePendingTransition(0, 0)
+    }
 
 
-    // ✅ MASTER BOTTOM SHEET (Smooth Animation, Full Screen, Auto-Keyboard, Dynamic Color)
-    private fun showCreateSpacePopup() {
-        val popupBinding = NewspacesmaplecardBinding.inflate(layoutInflater)
+    private fun showInviteMembersPopup() {
+        val popupBinding = InviteMembersCardBinding.inflate(layoutInflater)
 
-        // 🔥 NEW: Real-time text listener for the Create button color!
-        popupBinding.etSpaceName.doAfterTextChanged { text ->
+        // Change "Invite" text color when user types an email
+        popupBinding.etInviteEmail.doAfterTextChanged { text ->
             val input = text?.toString()?.trim() ?: ""
 
             if (input.isNotEmpty()) {
-                // When there is text, change it to your new sky_blue color
-                popupBinding.btnCreate.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.sky_blue))
+                // If using sky_blue, change R.color.primary_blue to R.color.sky_blue
+                popupBinding.btnSubmitInvite.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_blue))
             } else {
-                // When empty, change it back to the dim grey
-                popupBinding.btnCreate.setTextColor(android.graphics.Color.parseColor("#C7C7CC"))
+                popupBinding.btnSubmitInvite.setTextColor(android.graphics.Color.parseColor("#C7C7CC")) // Disabled Grey
             }
         }
 
@@ -76,77 +99,153 @@ class Dashboard : AppCompatActivity() {
         dialog.setContentView(popupBinding.root)
 
         dialog.setOnShowListener {
-            val bottomSheet = dialog.findViewById<android.view.View>(
+            val bottomSheet = dialog.findViewById<View>(
                 com.google.android.material.R.id.design_bottom_sheet
             ) ?: return@setOnShowListener
 
-            // 1. Transparent background (for rounded corners)
+            // 1. Transparent background
             bottomSheet.setBackgroundResource(android.R.color.transparent)
 
-            // 2. Fix edge-to-edge padding so it doesn't overlap Android navigation buttons
-            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomSheet) { v, insets ->
-                val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            // 2. Handle System Navigation Bars (Copied from Create Space)
+            ViewCompat.setOnApplyWindowInsetsListener(bottomSheet) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(0, 0, 0, systemBars.bottom)
                 insets
             }
 
-            // 3. FIX THE FLOATING: Force the hidden container to stretch to the bottom!
+            // 3. Force Full Screen / MATCH_PARENT (Copied from Create Space)
             val layoutParams = bottomSheet.layoutParams
-            layoutParams.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
             bottomSheet.layoutParams = layoutParams
 
-            // 4. JITTER FIX: Apply behavior AFTER layout is ready
+            // 4. Set Behavior to expand fully and skip the half-collapsed state
             bottomSheet.post {
-                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+                val behavior = BottomSheetBehavior.from(bottomSheet)
 
                 behavior.apply {
                     skipCollapsed = true
                     isFitToContents = false
                     expandedOffset = 0
-                    state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    state = BottomSheetBehavior.STATE_EXPANDED
                 }
 
-                // 5. KEYBOARD FIX: Wait for the slide animation to finish, THEN open the keyboard safely!
-                behavior.addBottomSheetCallback(object : com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
-                    override fun onStateChanged(sheet: android.view.View, newState: Int) {
-                        if (newState == com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED) {
-
-                            // Focus the text box
-                            popupBinding.etSpaceName.requestFocus()
-
-                            // Pop the keyboard
-                            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                            imm.showSoftInput(popupBinding.etSpaceName, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-
-                            // Remove this listener so it doesn't fire again if the user swipes
+                // 5. Auto-focus keyboard smoothly once it reaches the top
+                behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+                    override fun onStateChanged(sheet: View, newState: Int) {
+                        if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                            popupBinding.etInviteEmail.requestFocus()
+                            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                            imm.showSoftInput(popupBinding.etInviteEmail, InputMethodManager.SHOW_IMPLICIT)
                             behavior.removeBottomSheetCallback(this)
                         }
                     }
 
-                    override fun onSlide(sheet: android.view.View, slideOffset: Float) {}
+                    override fun onSlide(sheet: View, slideOffset: Float) {}
                 })
             }
         }
 
         dialog.show()
 
-        // Cancel Button
+        // Close Button (The X icon)
+        popupBinding.btnCloseInvite.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Submit Invite Button
+        popupBinding.btnSubmitInvite.setOnClickListener {
+            val email = popupBinding.etInviteEmail.text.toString().trim()
+
+            if (email.isNotEmpty()) {
+                // For now, just show a success toast and dismiss!
+                Toast.makeText(this, "Invitation sent to $email", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            } else {
+                Toast.makeText(this, "Please enter an email", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==========================================
+    // ✅ CREATE SPACE BOTTOM SHEET LOGIC
+    // ==========================================
+    private fun showCreateSpacePopup() {
+        val popupBinding = NewspacesmaplecardBinding.inflate(layoutInflater)
+
+        popupBinding.etSpaceName.doAfterTextChanged { text ->
+            val input = text?.toString()?.trim() ?: ""
+
+            if (input.isNotEmpty()) {
+                popupBinding.btnCreate.setTextColor(ContextCompat.getColor(this, R.color.sky_blue))
+            } else {
+                popupBinding.btnCreate.setTextColor(Color.parseColor("#C7C7CC"))
+            }
+        }
+
+        val dialog = BottomSheetDialog(
+            this,
+            com.google.android.material.R.style.Theme_Design_BottomSheetDialog
+        )
+
+        dialog.setContentView(popupBinding.root)
+
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(
+                com.google.android.material.R.id.design_bottom_sheet
+            ) ?: return@setOnShowListener
+
+            bottomSheet.setBackgroundResource(android.R.color.transparent)
+
+            ViewCompat.setOnApplyWindowInsetsListener(bottomSheet) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(0, 0, 0, systemBars.bottom)
+                insets
+            }
+
+            val layoutParams = bottomSheet.layoutParams
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+            bottomSheet.layoutParams = layoutParams
+
+            bottomSheet.post {
+                val behavior = BottomSheetBehavior.from(bottomSheet)
+
+                behavior.apply {
+                    skipCollapsed = true
+                    isFitToContents = false
+                    expandedOffset = 0
+                    state = BottomSheetBehavior.STATE_EXPANDED
+                }
+
+                behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+                    override fun onStateChanged(sheet: View, newState: Int) {
+                        if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                            popupBinding.etSpaceName.requestFocus()
+                            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                            imm.showSoftInput(popupBinding.etSpaceName, InputMethodManager.SHOW_IMPLICIT)
+                            behavior.removeBottomSheetCallback(this)
+                        }
+                    }
+
+                    override fun onSlide(sheet: View, slideOffset: Float) {}
+                })
+            }
+        }
+
+        dialog.show()
+
         popupBinding.btnCancel.setOnClickListener {
             dialog.dismiss()
         }
 
-        // Create Button
         popupBinding.btnCreate.setOnClickListener {
             val newSpaceName = popupBinding.etSpaceName.text.toString().trim()
 
             if (newSpaceName.isEmpty()) {
-                // We don't need a Toast here anymore since the button looks disabled visually,
-                // but you can leave it as a fallback!
                 return@setOnClickListener
             }
 
             if (doesSpaceExist(newSpaceName)) {
-                android.widget.Toast.makeText(this, "Can't create: Space already exists!", android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Can't create: Space already exists!", Toast.LENGTH_SHORT).show()
             } else {
                 saveSpaceToStorage(newSpaceName)
                 addCardToDashboard(newSpaceName)
@@ -155,16 +254,13 @@ class Dashboard : AppCompatActivity() {
         }
     }
 
-    // --- ADD CARD TO LIST ---
+    // ==========================================
+    // ✅ STORAGE & DATA LOGIC
+    // ==========================================
     private fun addCardToDashboard(spaceName: String) {
-        /*
-        val cardBinding = YourListCardBinding.inflate(layoutInflater, binding.llSpacesList, false)
-        cardBinding.tvSpaceName.text = spaceName
-        binding.llSpacesList.addView(cardBinding.root, 0)
-        */
+        // Your logic for adding a mini card to the dashboard later
     }
 
-    // --- STORAGE LOGIC ---
     private fun loadSavedSpaces() {
         val savedSpaces = getSavedSpacesList()
         for (space in savedSpaces) {
@@ -189,6 +285,4 @@ class Dashboard : AppCompatActivity() {
         val currentSpaces = getSavedSpacesList()
         return currentSpaces.any { it.equals(name, ignoreCase = true) }
     }
-
-
 }

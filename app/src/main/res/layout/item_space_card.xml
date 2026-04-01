@@ -27,16 +27,41 @@
             android:textStyle="bold" />
     </FrameLayout>
 
+    <ImageView
+        android:id="@+id/ivArrowRight"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:src="@drawable/arrow_right"
+        app:tint="@color/text_gray_secondary"
+        app:layout_constraintBottom_toBottomOf="@id/flInitialContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/flInitialContainer" />
+
+    <TextView
+        android:id="@+id/tvMemberCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="mem: 4"
+        android:textColor="@color/text_gray_secondary"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/flInitialContainer"
+        app:layout_constraintEnd_toStartOf="@id/ivArrowRight"
+        app:layout_constraintTop_toTopOf="@id/flInitialContainer" />
+
     <TextView
         android:id="@+id/tvSpaceName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
         android:text="All Tasks"
         android:textColor="@color/black"
         android:textSize="16sp"
+        android:maxLines="1"
+        android:ellipsize="end"
         app:layout_constraintBottom_toBottomOf="@id/flInitialContainer"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/tvMemberCount"
         app:layout_constraintStart_toEndOf="@id/flInitialContainer"
         app:layout_constraintTop_toTopOf="@id/flInitialContainer" />
 

@@ -10,4 +10,7 @@
     <color name="workspace_green">#34A853</color>
     <color name="accent_pink">#E91E63</color>
     <color name="sky_blue">#89CFF0</color>
+    <color name="primary_blue">#6200EE</color>
+    <color name="off_white_bg">#FAFAFA</color>
+    <color name="primary_blue_light">#F0E6FF</color>
 </resources>
