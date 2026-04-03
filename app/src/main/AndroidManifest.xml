@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CapacitySync">
         <activity
+            android:name=".spaceDashboardActivity"
+            android:exported="false" />
+        <activity
             android:name=".newspaces"
             android:exported="false" />
         <activity

@@ -13,4 +13,12 @@
     <color name="primary_blue">#6200EE</color>
     <color name="off_white_bg">#FAFAFA</color>
     <color name="primary_blue_light">#F0E6FF</color>
+    <color name="workspace_icon_bg">#F2F2F7</color>
+    <color name="workspace_primary_purple">#5E35B1</color>
+    <color name="workspace_divider_grey">#E5E5EA</color>
+    <color name="workspace_text_muted">#8E8E93</color>
+    <color name="workspace_avatar_green">#4CAF50</color>
+    <color name="light_sky_blue_tint">#F0F9FF</color>
+    <color name="workspace_purple_light_bg">#F5F2FB</color>
+    <color name="workspace_purple_tint_medium">#ECE6F7</color>
 </resources>
