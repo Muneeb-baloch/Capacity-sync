@@ -2,12 +2,13 @@ package com.example.capacitysync
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -16,12 +17,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.widget.doAfterTextChanged
 import com.example.capacitysync.databinding.ActivitySpacescreenBinding
 import com.example.capacitysync.databinding.ItemSpaceCardBinding
+import com.example.capacitysync.databinding.ItemWorkspaceRowBinding
 import com.example.capacitysync.databinding.NewspacesmaplecardBinding
 import com.example.capacitysync.databinding.InviteMembersCardBinding
-import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.example.capacitysync.databinding.WorkspaceSwitcherCardBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class newspaces : AppCompatActivity() {
@@ -53,6 +54,7 @@ class newspaces : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         loadSavedSpaces()
+        updateTopBarUI() // ✅ Ensures the top bar updates when returning to this screen
     }
 
     override fun onPause() {
@@ -78,6 +80,84 @@ class newspaces : AppCompatActivity() {
         binding.btnInvite.setOnClickListener {
             showInviteMembersPopup()
         }
+
+        // ✅ 4. Top Bar Dropdown Switcher
+        val showSwitcher = View.OnClickListener { showWorkspaceSwitcherPopup() }
+        binding.ivWorkspaceLogo.setOnClickListener(showSwitcher)
+        binding.tvWorkspaceName.setOnClickListener(showSwitcher)
+        binding.ivDropdownArrow.setOnClickListener(showSwitcher)
+    }
+
+    // ==========================================
+    // ✅ HEADER LOGIC (THE FIX FOR DUMMY DATA)
+    // ==========================================
+    private fun updateTopBarUI() {
+        val savedSpaces = getSavedSpacesList()
+        val spaceName = sharedPrefs.getString("ACTIVE_WORKSPACE", savedSpaces.firstOrNull() ?: "C4S Workspace") ?: "C4S Workspace"
+        binding.tvWorkspaceName.text = spaceName
+
+        val initial = if (spaceName.isNotBlank()) spaceName.take(1).uppercase() else "W"
+
+        // Dynamic Logo Generation matching the active space
+        val colors = listOf("#FF5722", "#4CAF50", "#2196F3", "#9C27B0", "#FFC107", "#00BCD4")
+        val colorIndex = Math.abs(spaceName.hashCode()) % colors.size
+        val bgColor = Color.parseColor(colors[colorIndex])
+
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val bgPaint = Paint().apply { color = bgColor; isAntiAlias = true }
+        canvas.drawCircle(50f, 50f, 50f, bgPaint)
+        val textPaint = Paint().apply { color = Color.WHITE; textSize = 45f; typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER; isAntiAlias = true }
+        val yPos = (canvas.height / 2f - (textPaint.descent() + textPaint.ascent()) / 2f)
+        canvas.drawText(initial, 50f, yPos, textPaint)
+        binding.ivWorkspaceLogo.setImageBitmap(bitmap)
+    }
+
+    private fun showWorkspaceSwitcherPopup() {
+        val popupBinding = WorkspaceSwitcherCardBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(this, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
+        dialog.setContentView(popupBinding.root)
+
+        val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.setBackgroundResource(android.R.color.transparent)
+
+        popupBinding.btnCloseWorkspaces.setOnClickListener { dialog.dismiss() }
+
+        popupBinding.btnCreateWorkspace.setOnClickListener {
+            dialog.dismiss()
+            showCreateSpacePopup()
+        }
+
+        val savedSpaces = getSavedSpacesList()
+        val activeWorkspace = sharedPrefs.getString("ACTIVE_WORKSPACE", savedSpaces.firstOrNull() ?: "")
+
+        popupBinding.llWorkspacesList.removeAllViews()
+
+        for (spaceName in savedSpaces) {
+            val rowBinding = ItemWorkspaceRowBinding.inflate(layoutInflater, popupBinding.llWorkspacesList, false)
+            rowBinding.tvWorkspaceName.text = spaceName
+            rowBinding.tvWorkspaceInitial.text = if (spaceName.isNotEmpty()) spaceName.take(1).uppercase() else "?"
+
+            val colors = listOf("#FF5722", "#4CAF50", "#2196F3", "#9C27B0", "#FFC107", "#00BCD4")
+            val colorIndex = Math.abs(spaceName.hashCode()) % colors.size
+            rowBinding.cardWorkspaceAvatar.setCardBackgroundColor(Color.parseColor(colors[colorIndex]))
+
+            if (spaceName == activeWorkspace) {
+                rowBinding.ivWorkspaceCheckmark.visibility = View.VISIBLE
+                rowBinding.tvWorkspaceName.setTextColor(ContextCompat.getColor(this, R.color.workspace_primary_purple))
+            } else {
+                rowBinding.ivWorkspaceCheckmark.visibility = View.INVISIBLE
+                rowBinding.tvWorkspaceName.setTextColor(ContextCompat.getColor(this, R.color.black))
+            }
+
+            rowBinding.root.setOnClickListener {
+                sharedPrefs.edit().putString("ACTIVE_WORKSPACE", spaceName).apply()
+                updateTopBarUI()
+                dialog.dismiss()
+            }
+            popupBinding.llWorkspacesList.addView(rowBinding.root)
+        }
+        dialog.show()
     }
 
     // ==========================================
@@ -114,6 +194,11 @@ class newspaces : AppCompatActivity() {
                 } else {
                     saveSpaceToStorage(newSpaceName)
                     addSpaceCardToView(newSpaceName)
+
+                    // Optional: Make the newly created space the active one immediately
+                    sharedPrefs.edit().putString("ACTIVE_WORKSPACE", newSpaceName).apply()
+                    updateTopBarUI()
+
                     dialog.dismiss()
                 }
             }
@@ -152,19 +237,21 @@ class newspaces : AppCompatActivity() {
         val initial = if (spaceName.isNotEmpty()) spaceName.take(1).uppercase() else "?"
         cardBinding.tvSpaceInitial.text = initial
 
-        // Branded Avatar Colors
+        // ✅ FIXED: Branded Avatar Colors (No longer random, tied to the space name)
         val colors = listOf("#FF5722", "#4CAF50", "#2196F3", "#9C27B0", "#FFC107", "#00BCD4")
-        cardBinding.flInitialContainer.background.setTint(Color.parseColor(colors.random()))
+        val colorIndex = Math.abs(spaceName.hashCode()) % colors.size
+        cardBinding.flInitialContainer.background.setTint(Color.parseColor(colors[colorIndex]))
+
         cardBinding.tvMemberCount.text = "mem: 1"
 
-        // 🔥 CRITICAL ADDITION: Navigation to the Dashboard
+        // Navigation to the Dashboard
         cardBinding.root.setOnClickListener {
             val intent = Intent(this, spaceDashboardActivity::class.java)
             // Pass the workspace name so the dashboard knows which one it is
             intent.putExtra("SPACE_NAME", spaceName)
             startActivity(intent)
 
-            // Snape transition
+            // Snap transition
             overridePendingTransition(0, 0)
         }
 

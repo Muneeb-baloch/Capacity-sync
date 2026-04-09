@@ -21,4 +21,12 @@
     <color name="light_sky_blue_tint">#F0F9FF</color>
     <color name="workspace_purple_light_bg">#F5F2FB</color>
     <color name="workspace_purple_tint_medium">#ECE6F7</color>
+    <color name="text_gray_light">#D1D1D6</color>
+    <color name="text_gray_inactive">#A1A1AA</color>
+    <color name="health_green">#10B981</color>
+    <color name="workspace_card_bg_tint">#F7F8FA</color>
+    <color name="red_error">#FF3B30</color> <color name="red_error_light">#FFF0F0</color>
+    <color name="glass_card_bg_tint">#CCF7F8FA</color>
+    <color name="primary_text_grey">#1A1C1E</color>
+
 </resources>
