@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CapacitySync">
         <activity
+            android:name=".log_time"
+            android:exported="false" />
+        <activity
             android:name=".spaceDashboardActivity"
             android:exported="false" />
         <activity
@@ -32,4 +35,3 @@
     </application>
 
 </manifest>
-

@@ -34,7 +34,7 @@
         app:layout_constraintEnd_toStartOf="@+id/cvCapacityBadge"
         app:layout_constraintStart_toEndOf="@id/ivAssigneeAvatar"
         app:layout_constraintTop_toTopOf="@id/ivAssigneeAvatar"
-        app:layout_setVerticalChainStyle="packed" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvAssigneeRole"

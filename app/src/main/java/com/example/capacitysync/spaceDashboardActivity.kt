@@ -3,8 +3,6 @@ package com.example.capacitysync
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -89,15 +87,21 @@ class spaceDashboardActivity : AppCompatActivity() {
             insets
         }
 
-        // 🔥 THE FIX: Catch the incoming Space Name from newspaces.kt
+        // 🔥 Catch the incoming Space Name
         val passedSpaceName = intent.getStringExtra("SPACE_NAME")
         if (!passedSpaceName.isNullOrEmpty()) {
-            // Immediately update the SharedPreferences so everything else loads correctly
             sharedPrefs.edit().putString("ACTIVE_WORKSPACE", passedSpaceName).apply()
         }
 
         updateTopBarUI()
 
+        // ✅ FIXED CLICK LISTENERS
+        // This opens the new Log Time Bottom Sheet (Make sure the ID matches your XML)
+        binding.cardCompleted.setOnClickListener {
+            showLogTimeBottomSheet()
+        }
+
+        // This opens the existing Weekly Capacity / Logs Hours editor
         binding.cardLogsHours.setOnClickListener {
             showLogsBottomSheet(null)
         }
@@ -110,6 +114,28 @@ class spaceDashboardActivity : AppCompatActivity() {
         binding.tvWorkspaceName.setOnClickListener { showWorkspaceSwitcherPopup() }
 
         refreshDashboardSavedCards()
+    }
+
+    // ==========================================
+    // ✅ LOG TIME BOTTOM SHEET (NEW)
+    // ==========================================
+
+    private fun showLogTimeBottomSheet() {
+        val dialog = BottomSheetDialog(this, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
+
+        // Ensure this matches the name of your flat card XML file
+        val logTimeBinding = com.example.capacitysync.databinding.CardLogTimeBinding.inflate(layoutInflater)
+        dialog.setContentView(logTimeBinding.root)
+
+        val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.setBackgroundResource(android.R.color.transparent)
+
+        logTimeBinding.btnSaveTimeLog.setOnClickListener {
+            // Logic to save the logged time goes here
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     // ==========================================
@@ -143,7 +169,6 @@ class spaceDashboardActivity : AppCompatActivity() {
 
         val initial = if (spaceName.isNotBlank()) spaceName.take(1).uppercase() else "W"
 
-        // Dynamic Logo Generation
         val colors = listOf("#FF5722", "#4CAF50", "#2196F3", "#9C27B0", "#FFC107", "#00BCD4")
         val colorIndex = Math.abs(spaceName.hashCode()) % colors.size
         val bgColor = Color.parseColor(colors[colorIndex])
@@ -244,7 +269,6 @@ class spaceDashboardActivity : AppCompatActivity() {
 
             cardView.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.progressWeekly).progress = 100
 
-            // This will now correctly pull the active space you tapped on!
             val currentSpace = sharedPrefs.getString("ACTIVE_WORKSPACE", "C4S Workspace")
             cardView.findViewById<TextView>(R.id.tvWorkspaceContext).text = "My Capacity • $currentSpace"
 
@@ -252,7 +276,6 @@ class spaceDashboardActivity : AppCompatActivity() {
                 showLogsBottomSheet(log.id)
             }
 
-            // Mini-Week Dynamic Day Highlighting
             val days = arrayOf(
                 cardView.findViewById<TextView>(R.id.dayMon),
                 cardView.findViewById<TextView>(R.id.dayTue),
