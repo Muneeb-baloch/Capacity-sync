@@ -243,7 +243,7 @@
                             android:padding="20dp">
 
                             <ImageView
-                                android:id="@+id/ivCompletedIcon"
+                                android:id="@+id/logtimecard"
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 app:layout_constraintStart_toStartOf="parent"
@@ -252,7 +252,7 @@
                                 app:tint="#FF6D00" />
 
                             <TextView
-                                android:id="@+id/tvCompletedCount"
+                                android:id="@+id/logtime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
@@ -271,7 +271,7 @@
                                 android:textColor="@color/black"
                                 android:textSize="14sp"
                                 app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/ivCompletedIcon" />
+                                app:layout_constraintTop_toBottomOf="@id/logtimecard" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
