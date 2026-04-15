@@ -28,6 +28,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 class newspaces : AppCompatActivity() {
 
     private lateinit var binding: ActivitySpacescreenBinding
+    private lateinit var firebaseSyncManager: FirebaseSyncManager
 
     private val sharedPrefs by lazy {
         getSharedPreferences("CapacitySyncPrefs", Context.MODE_PRIVATE)
@@ -48,18 +49,34 @@ class newspaces : AppCompatActivity() {
             insets
         }
 
+        // Initialize Firebase Sync Manager
+        firebaseSyncManager = FirebaseSyncManager(this)
+
         setupClickListeners()
     }
 
     override fun onResume() {
         super.onResume()
         loadSavedSpaces()
-        updateTopBarUI() // ✅ Ensures the top bar updates when returning to this screen
+        updateTopBarUI()
+        
+        // Sync with Firebase and reload when done
+        firebaseSyncManager.syncWorkspaces()
+        
+        // Reload spaces after a short delay to get Firebase synced data
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            loadSavedSpaces()
+        }, 1500)
     }
 
     override fun onPause() {
         super.onPause()
         overridePendingTransition(0, 0)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        firebaseSyncManager.cleanup()
     }
 
     private fun setupClickListeners() {
@@ -268,6 +285,9 @@ class newspaces : AppCompatActivity() {
     private fun saveSpaceToStorage(name: String) {
         val updatedSpaces = getSavedSpacesList().toMutableSet().apply { add(name) }
         sharedPrefs.edit().putStringSet("SAVED_SPACES", updatedSpaces).apply()
+        
+        // ✅ Sync to Firebase immediately after saving locally
+        firebaseSyncManager.syncWorkspaces()
     }
 
     private fun doesSpaceExist(name: String): Boolean {

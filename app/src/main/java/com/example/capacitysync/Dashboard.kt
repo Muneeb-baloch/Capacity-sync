@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -27,10 +28,12 @@ import com.example.capacitysync.databinding.WorkspaceSwitcherCardBinding
 import com.example.capacitysync.databinding.ItemWorkspaceRowBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.auth.FirebaseAuth
 
 class Dashboard : AppCompatActivity() {
 
     private lateinit var binding: ActivityDashboardBinding
+    private lateinit var firebaseSyncManager: FirebaseSyncManager
 
     private val sharedPrefs by lazy {
         getSharedPreferences("CapacitySyncPrefs", Context.MODE_PRIVATE)
@@ -50,6 +53,10 @@ class Dashboard : AppCompatActivity() {
             insets
         }
 
+        // Initialize Firebase Sync Manager
+        firebaseSyncManager = FirebaseSyncManager(this)
+        initializeFirebaseAuth()
+
         loadSavedSpaces()
         updateTopBarUI()
         setupClickListeners()
@@ -58,6 +65,62 @@ class Dashboard : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         removeActivityTransition() // Fixes the yellow deprecation warning
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        firebaseSyncManager.cleanup()
+    }
+
+    // ==========================================
+    // ✅ FIREBASE AUTHENTICATION & SYNC
+    // ==========================================
+    
+    private fun initializeFirebaseAuth() {
+        val auth = FirebaseAuth.getInstance()
+        
+        Log.d("Firebase", "Initializing Firebase Auth...")
+        Log.d("Firebase", "Current user: ${auth.currentUser?.uid ?: "null"}")
+        
+        // Try anonymous authentication, but don't block the app if it fails
+        if (auth.currentUser == null) {
+            Log.d("Firebase", "No user found, attempting anonymous sign-in...")
+            
+            // Set a timeout - if auth doesn't work in 5 seconds, continue without it
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            var authCompleted = false
+            
+            handler.postDelayed({
+                if (!authCompleted) {
+                    Log.w("Firebase", "Auth timeout - continuing in offline mode")
+                    Toast.makeText(this, "Working in offline mode", Toast.LENGTH_SHORT).show()
+                }
+            }, 5000)
+            
+            auth.signInAnonymously()
+                .addOnSuccessListener {
+                    authCompleted = true
+                    val userId = auth.currentUser?.uid
+                    Log.d("Firebase", "✅ Anonymous sign-in successful! User ID: $userId")
+                    Toast.makeText(this, "Connected to Firebase ✓", Toast.LENGTH_SHORT).show()
+                    // Sync workspaces after authentication
+                    firebaseSyncManager.syncWorkspaces()
+                }
+                .addOnFailureListener { e ->
+                    authCompleted = true
+                    Log.e("Firebase", "❌ Anonymous sign-in failed")
+                    Log.e("Firebase", "Error message: ${e.message}")
+                    
+                    // App continues to work with local storage only
+                    Toast.makeText(this, "Offline mode - Data saved locally", Toast.LENGTH_SHORT).show()
+                }
+        } else {
+            val userId = auth.currentUser?.uid
+            Log.d("Firebase", "✅ User already authenticated. User ID: $userId")
+            Toast.makeText(this, "Firebase connected ✓", Toast.LENGTH_SHORT).show()
+            // User already authenticated, sync workspaces
+            firebaseSyncManager.syncWorkspaces()
+        }
     }
 
     // Helper to fix the deprecated overridePendingTransition warning
@@ -365,6 +428,9 @@ class Dashboard : AppCompatActivity() {
             add(name)
         }
         sharedPrefs.edit().putStringSet("SAVED_SPACES", updatedSpaces).apply()
+        
+        // ✅ Sync to Firebase immediately after saving locally
+        firebaseSyncManager.syncWorkspaces()
     }
 
     private fun doesSpaceExist(name: String): Boolean {

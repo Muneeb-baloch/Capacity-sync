@@ -25,6 +25,8 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.example.capacitysync.databinding.ActivitySpaceDashboardBinding
 import com.example.capacitysync.databinding.CardWeeklyCapacityBinding
+import com.example.capacitysync.databinding.CardLogTimeBinding
+import com.example.capacitysync.databinding.LayoutLogHourSelectorBinding
 import com.example.capacitysync.databinding.ItemTimeIntervalCardsBinding
 import com.example.capacitysync.databinding.ItemWorkspaceRowBinding
 import com.example.capacitysync.databinding.WorkspaceSwitcherCardBinding
@@ -59,6 +61,7 @@ data class TimeSlot(
 class spaceDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySpaceDashboardBinding
+    private lateinit var firebaseSyncManager: FirebaseSyncManager
 
     private val sharedPrefs by lazy {
         getSharedPreferences("CapacitySyncPrefs", Context.MODE_PRIVATE)
@@ -89,6 +92,9 @@ class spaceDashboardActivity : AppCompatActivity() {
             insets
         }
 
+        // Initialize Firebase Sync Manager
+        firebaseSyncManager = FirebaseSyncManager(this)
+
         // 🔥 THE FIX: Catch the incoming Space Name from newspaces.kt
         val passedSpaceName = intent.getStringExtra("SPACE_NAME")
         if (!passedSpaceName.isNullOrEmpty()) {
@@ -97,9 +103,25 @@ class spaceDashboardActivity : AppCompatActivity() {
         }
 
         updateTopBarUI()
+        
+        // Load local data first (instant)
+        refreshDashboardSavedCards()
+        
+        // Sync with Firebase and reload after sync completes
+        val currentWorkspace = sharedPrefs.getString("ACTIVE_WORKSPACE", "C4S Workspace") ?: "C4S Workspace"
+        firebaseSyncManager.syncLoggedHours(currentWorkspace)
+        
+        // Reload after 2 seconds to get Firebase synced data
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            refreshDashboardSavedCards()
+        }, 2000)
 
         binding.cardLogsHours.setOnClickListener {
             showLogsBottomSheet(null)
+        }
+
+        binding.cardCompleted.setOnClickListener {
+            showLogTimeBottomSheet()
         }
 
         binding.layoutLogsList.setOnClickListener {
@@ -108,8 +130,6 @@ class spaceDashboardActivity : AppCompatActivity() {
 
         binding.ivDropdownArrow.setOnClickListener { showWorkspaceSwitcherPopup() }
         binding.tvWorkspaceName.setOnClickListener { showWorkspaceSwitcherPopup() }
-
-        refreshDashboardSavedCards()
     }
 
     // ==========================================
@@ -129,7 +149,14 @@ class spaceDashboardActivity : AppCompatActivity() {
 
     private fun saveLogsForCurrentWorkspace(logs: List<WeeklyLog>) {
         val json = Gson().toJson(logs)
-        sharedPrefs.edit().putString(getWorkspaceKey(), json).apply()
+        sharedPrefs.edit()
+            .putString(getWorkspaceKey(), json)
+            .putLong("${sharedPrefs.getString("ACTIVE_WORKSPACE", "")}_last_updated", System.currentTimeMillis())
+            .apply()
+        
+        // ✅ Sync to Firebase immediately after saving locally
+        val currentWorkspace = sharedPrefs.getString("ACTIVE_WORKSPACE", "C4S Workspace") ?: "C4S Workspace"
+        firebaseSyncManager.syncLoggedHours(currentWorkspace)
     }
 
     // ==========================================
@@ -193,7 +220,18 @@ class spaceDashboardActivity : AppCompatActivity() {
             rowBinding.root.setOnClickListener {
                 sharedPrefs.edit().putString("ACTIVE_WORKSPACE", spaceName).apply()
                 updateTopBarUI()
+                
+                // Reload local data first
                 refreshDashboardSavedCards()
+                
+                // Sync logs for the newly selected workspace
+                firebaseSyncManager.syncLoggedHours(spaceName)
+                
+                // Reload after sync
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    refreshDashboardSavedCards()
+                }, 2000)
+                
                 dialog.dismiss()
             }
             popupBinding.llWorkspacesList.addView(rowBinding.root)
@@ -315,8 +353,13 @@ class spaceDashboardActivity : AppCompatActivity() {
             }
 
             saveLogsForCurrentWorkspace(currentLogs)
+            
+            // Refresh immediately with local data
             refreshDashboardSavedCards()
+            
+            // Expand the list if not already expanded
             if (!isLogsListExpanded) toggleLogsList()
+            
             dialog.dismiss()
         }
 
@@ -463,4 +506,339 @@ class spaceDashboardActivity : AppCompatActivity() {
         return SimpleDateFormat("hh:mm a", Locale.getDefault()).format(calendar.time)
     }
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
+
+    // ==========================================
+    // ✅ LOG TIME BOTTOM SHEET (cardCompleted)
+    // ==========================================
+
+    private fun showLogTimeBottomSheet() {
+        val dialog = BottomSheetDialog(this, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
+        val sheetBinding = CardLogTimeBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundResource(android.R.color.transparent)
+        }
+
+        var currentSelectedLog: WeeklyLog? = null
+        var timerRunnable: Runnable? = null
+        val timerHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        var timerStartMillis = 0L
+        var currentDayLabel = "" // stores "Wed, Apr 15" separately so we don't lose it
+
+        // Load most recent log
+        val logs = loadLogsForCurrentWorkspace()
+        if (logs.isNotEmpty()) {
+            currentSelectedLog = logs.maxByOrNull { it.id.toLongOrNull() ?: 0L }
+            val summary = formatLogSummary(currentSelectedLog!!)
+            currentDayLabel = summary.substringBefore("·").trim()
+            sheetBinding.incSelectTimeLog.tvSelectedTime.text = summary
+        } else {
+            sheetBinding.incSelectTimeLog.tvSelectedTime.text = "No hours logged yet"
+        }
+
+        // Helper: calculate total minutes for a log
+        fun totalMinsFor(log: WeeklyLog): Int {
+            var t = 0
+            for (dayList in log.dateData.values) for (slot in dayList) t += slot.getDurationMinutes()
+            return t
+        }
+
+        // Helper: get previously saved elapsed seconds for a log
+        fun savedElapsedSecs(logId: String): Int =
+            sharedPrefs.getInt("TIMER_ELAPSED_$logId", 0)
+
+        // Helper: save elapsed seconds for a log
+        fun saveElapsedSecs(logId: String, secs: Int) =
+            sharedPrefs.edit().putInt("TIMER_ELAPSED_$logId", secs).apply()
+
+        // Helper: update the timer UI given totalMins and elapsedSecs
+        fun updateTimerUI(totalMins: Int, elapsedSecs: Int) {
+            val elapsedMins = elapsedSecs / 60
+            val elapsedHours = elapsedMins / 60
+
+            // Live timer HH:MM:SS
+            sheetBinding.tvLiveTimer.text = String.format(
+                "%02d:%02d:%02d", elapsedHours, elapsedMins % 60, elapsedSecs % 60
+            )
+
+            // Total
+            val totalH = totalMins / 60
+            val totalM = totalMins % 60
+            sheetBinding.tvTimerTotal.text = if (totalM == 0) "Total: ${totalH}h" else "Total: ${totalH}h ${totalM}m"
+
+            // Used
+            sheetBinding.tvTimerUsed.text = when {
+                elapsedSecs < 60 -> "Used: ${elapsedSecs}s"
+                elapsedMins < 60 -> "Used: ${elapsedMins}m ${elapsedSecs % 60}s"
+                else -> "Used: ${elapsedHours}h ${elapsedMins % 60}m"
+            }
+
+            // Remaining - calculated in seconds for accuracy
+            val totalSecs = totalMins * 60
+            val remainingSecs = (totalSecs - elapsedSecs).coerceAtLeast(0)
+            val remH = remainingSecs / 3600
+            val remM = (remainingSecs % 3600) / 60
+            val remS = remainingSecs % 60
+            sheetBinding.tvTimerRemaining.text = when {
+                remainingSecs == 0 -> "Remaining: 0m"
+                remH > 0 && remM == 0 -> "Remaining: ${remH}h"
+                remH > 0 -> "Remaining: ${remH}h ${remM}m"
+                remM > 0 -> "Remaining: ${remM}m ${remS}s"
+                else -> "Remaining: ${remS}s"
+            }
+
+           
+            val remainingLabel = when {
+                remainingSecs == 0 -> "0m left"
+                remH > 0 && remM == 0 -> "${remH}h left"
+                remH > 0 -> "${remH}h ${remM}m left"
+                remM > 0 -> "${remM}m ${remS}s left"
+                else -> "${remS}s left"
+            }
+            sheetBinding.incSelectTimeLog.tvSelectedTime.text =
+                if (currentDayLabel.isNotEmpty()) "$currentDayLabel · $remainingLabel"
+                else remainingLabel
+        }
+
+        // Helper: show timer section with existing elapsed time
+        fun showTimerFor(log: WeeklyLog) {
+            val totalMins = totalMinsFor(log)
+            if (totalMins == 0) return
+
+            val previousElapsedSecs = savedElapsedSecs(log.id)
+
+            sheetBinding.layoutTimerSection.visibility = View.VISIBLE
+            sheetBinding.btnSaveTimeLog.isEnabled = false
+            sheetBinding.btnSaveTimeLog.alpha = 0.5f
+
+            // Start from where we left off
+            timerStartMillis = System.currentTimeMillis() - (previousElapsedSecs * 1000L)
+
+            timerRunnable?.let { timerHandler.removeCallbacks(it) }
+            timerRunnable = object : Runnable {
+                override fun run() {
+                    val elapsedSecs = ((System.currentTimeMillis() - timerStartMillis) / 1000).toInt()
+                    updateTimerUI(totalMins, elapsedSecs)
+                    timerHandler.postDelayed(this, 1000)
+                }
+            }
+            timerHandler.post(timerRunnable!!)
+        }
+
+        // If current log already has elapsed time saved, restore timer immediately
+        currentSelectedLog?.let { log ->
+            if (savedElapsedSecs(log.id) > 0) {
+                showTimerFor(log)
+            }
+        }
+
+        // Change button
+        sheetBinding.incSelectTimeLog.rowSelectedTime.setOnClickListener {
+            showLogPickerSheet(sheetBinding, onSelected = { log ->
+                currentSelectedLog = log
+                val summary = formatLogSummary(log)
+                currentDayLabel = summary.substringBefore("·").trim()
+                sheetBinding.incSelectTimeLog.tvSelectedTime.text = summary
+
+                // Stop current timer
+                timerRunnable?.let { timerHandler.removeCallbacks(it) }
+                sheetBinding.layoutTimerSection.visibility = View.GONE
+                sheetBinding.btnSaveTimeLog.isEnabled = true
+                sheetBinding.btnSaveTimeLog.alpha = 1f
+
+                // If this log has saved elapsed time, restore it
+                if (savedElapsedSecs(log.id) > 0) {
+                    showTimerFor(log)
+                }
+            })
+        }
+
+        // Log Time button - start/resume timer
+        sheetBinding.btnSaveTimeLog.setOnClickListener {
+            val log = currentSelectedLog ?: return@setOnClickListener
+            showTimerFor(log)
+        }
+
+        // Stop timer - save elapsed time
+        sheetBinding.btnStopTimer.setOnClickListener {
+            val log = currentSelectedLog
+            if (log != null) {
+                val elapsedSecs = ((System.currentTimeMillis() - timerStartMillis) / 1000).toInt()
+                saveElapsedSecs(log.id, elapsedSecs)
+            }
+            timerRunnable?.let { timerHandler.removeCallbacks(it) }
+            sheetBinding.layoutTimerSection.visibility = View.GONE
+            sheetBinding.btnSaveTimeLog.isEnabled = true
+            sheetBinding.btnSaveTimeLog.alpha = 1f
+            dialog.dismiss()
+        }
+
+        dialog.setOnDismissListener {
+            timerRunnable?.let { timerHandler.removeCallbacks(it) }
+        }
+
+        dialog.show()
+    }
+
+    // Shows a bottom sheet listing all logs using layout_log_hour_selector format
+    private fun showLogPickerSheet(
+        parentBinding: CardLogTimeBinding,
+        onSelected: (WeeklyLog) -> Unit
+    ) {
+        val logs = loadLogsForCurrentWorkspace()
+        if (logs.isEmpty()) return
+
+        val pickerDialog = BottomSheetDialog(this, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
+
+        val wrapper = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20))
+        }
+
+        // Title
+        wrapper.addView(TextView(this).apply {
+            text = "Select Logged Hours"
+            textSize = 16f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#1C1B1F"))
+            val p = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            p.bottomMargin = dpToPx(12)
+            layoutParams = p
+        })
+
+        // One row per log using layout_log_hour_selector
+        for (log in logs.sortedByDescending { it.id.toLongOrNull() ?: 0L }) {
+            val rowBinding = LayoutLogHourSelectorBinding.inflate(layoutInflater, wrapper, false)
+
+            // Calculate total and remaining for this log
+            val totalMins = log.dateData.values.sumOf { slots -> slots.sumOf { it.getDurationMinutes() } }
+            val elapsedSecs = sharedPrefs.getInt("TIMER_ELAPSED_${log.id}", 0)
+            val remainingSecs = ((totalMins * 60) - elapsedSecs).coerceAtLeast(0)
+            val remH = remainingSecs / 3600
+            val remM = (remainingSecs % 3600) / 60
+
+            // Day label from formatLogSummary
+            val fullSummary = formatLogSummary(log)
+            val dayLabel = fullSummary.substringBefore("·").trim()
+
+            // Show remaining if timer has been used, otherwise show original
+            val displayText = if (elapsedSecs > 0) {
+                val remLabel = when {
+                    remainingSecs == 0 -> "0m left"
+                    remH > 0 && remM == 0 -> "${remH}h left"
+                    remH > 0 -> "${remH}h ${remM}m left"
+                    else -> "${remM}m left"
+                }
+                "$dayLabel · $remLabel"
+            } else {
+                fullSummary
+            }
+
+            rowBinding.tvSelectedTime.text = displayText
+            rowBinding.tvChangeLabel.visibility = View.GONE
+
+            // Show all days with hours as subtitle
+            val dates = log.dateData.keys.sorted()
+            val dateRange = if (dates.size == 1)
+                formatDateForDisplay(dates.first())
+            else if (dates.isNotEmpty())
+                "${formatDateForDisplay(dates.first())} – ${formatDateForDisplay(dates.last())}"
+            else ""
+
+            // Per-day breakdown string e.g. "Mon 1h · Wed 2h"
+            val breakdown = dates.mapNotNull { dateKey ->
+                val slots = log.dateData[dateKey] ?: return@mapNotNull null
+                val mins = slots.sumOf { it.getDurationMinutes() }
+                if (mins == 0) return@mapNotNull null
+                val h = mins / 60; val m = mins % 60
+                val day = try {
+                    val d = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateKey)
+                    SimpleDateFormat("EEE", Locale.getDefault()).format(d!!)
+                } catch (e: Exception) { "?" }
+                if (m == 0) "$day ${h}h" else "$day ${h}h ${m}m"
+            }.joinToString(" · ")
+
+            rowBinding.rowSelectedTime.setOnClickListener {
+                onSelected(log)
+                pickerDialog.dismiss()
+            }
+
+            val rowContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                val p = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                p.bottomMargin = dpToPx(8)
+                layoutParams = p
+            }
+            rowContainer.addView(rowBinding.root)
+
+            // Show date range + per-day breakdown
+            val subtitle = listOf(dateRange, breakdown).filter { it.isNotEmpty() }.joinToString("  |  ")
+            if (subtitle.isNotEmpty()) {
+                rowContainer.addView(TextView(this).apply {
+                    text = subtitle
+                    textSize = 12f
+                    setTextColor(Color.parseColor("#8E8E93"))
+                    val p = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    p.topMargin = dpToPx(2)
+                    p.bottomMargin = dpToPx(4)
+                    p.marginStart = dpToPx(4)
+                    layoutParams = p
+                })
+            }
+
+            wrapper.addView(rowContainer)
+        }
+
+        val scroll = android.widget.ScrollView(this).apply {
+            setBackgroundColor(Color.WHITE)
+            addView(wrapper)
+        }
+        pickerDialog.setContentView(scroll)
+
+        // Fix black background
+        pickerDialog.setOnShowListener {
+            val bottomSheet = pickerDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundColor(Color.WHITE)
+        }
+
+        pickerDialog.show()
+    }
+
+    // Formats a WeeklyLog as "Mon, 2h 30m" - uses the day with most hours logged
+    private fun formatLogSummary(log: WeeklyLog): String {
+        if (log.dateData.isEmpty()) return "No hours logged"
+
+        // Find the day with the most hours
+        var bestDateKey = ""
+        var bestMins = 0
+
+        for ((dateKey, slots) in log.dateData) {
+            val dayMins = slots.sumOf { it.getDurationMinutes() }
+            if (dayMins > bestMins) {
+                bestMins = dayMins
+                bestDateKey = dateKey
+            }
+        }
+
+        // Total across all days
+        val totalMinutes = log.dateData.values.sumOf { slots -> slots.sumOf { it.getDurationMinutes() } }
+        val hours = totalMinutes / 60
+        val mins = totalMinutes % 60
+
+        // Day name from the best date
+        val dayName = if (bestDateKey.isNotEmpty()) {
+            try {
+                val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(bestDateKey)
+                SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(date!!)
+            } catch (e: Exception) { "—" }
+        } else "—"
+
+        return when {
+            totalMinutes == 0 -> "No hours logged"
+            mins == 0 -> "$dayName · ${hours}h"
+            else -> "$dayName · ${hours}h ${mins}m"
+        }
+    }
 }
